@@ -12,7 +12,7 @@ object Main {
   }
 
   def main(args: Array[String]): Unit = {
-    val stormedDatasetDir = getClass.getResource(".").getPath.substring(1) //define for folder with stormed json files
+    val stormedDatasetDir = "src/main/resources/" //define for folder with stormed json files
 
     var score = 0.0
     var numfiles = 0
