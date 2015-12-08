@@ -1,4 +1,5 @@
 import java.nio.file.{Path, Paths, Files}
+import java.util.Calendar
 import java.util.function.{Predicate, Consumer}
 
 import ch.usi.inf.reveal.parsing.artifact._
@@ -12,19 +13,19 @@ object Main {
   }
 
   def main(args: Array[String]): Unit = {
-    val stormedDatasetDir = "src/main/resources/" //define for folder with stormed json files
+    val stormedDataSetDir = "src/main/resources/input/"
 
-    var score = 0.0
-    var numfiles = 0
-    Files.walk(Paths.get(stormedDatasetDir)).filter({(f:Path) => f.toString.endsWith(".json")}).forEach({(f:Path) =>
-      val artifact = ArtifactSerializer.deserializeFromFile(f.toString)
-      score *= numfiles
-      score += artifact.question.score
-      numfiles += 1
-      score = score / numfiles
+    val analyser = new DiscussionAnalyser("src/main/resources/results/" + Calendar.getInstance().getTimeInMillis + ".csv")
 
-      println(artifact.question.score + " - " + score)
-    })
+    Files.walk(Paths.get(stormedDataSetDir))
+      .filter({(f:Path) => f.toString.endsWith(".json")})
+      .forEach({(f:Path) => analyser.processDiscussion(ArtifactSerializer.deserializeFromFile(f.toString))})
+
+    analyser.finish()
   }
 
 }
+
+
+
+
