@@ -5,7 +5,7 @@ import ch.usi.inf.reveal.parsing.artifact.StackOverflowArtifact
 /**
   * Created by luiscleto on 08/12/2015.
   */
-class DiscussionAnalyser(filename: String) {
+class DiscussionAnalyser(filename: String, tagFilters: Seq[String]) {
   var numFiles = 0
   var scoreSum = 0
   var tagCountSum = 0
@@ -18,6 +18,10 @@ class DiscussionAnalyser(filename: String) {
   }
 
   def processDiscussion(artifact: StackOverflowArtifact): Unit = {
+
+    if(!tagFilters.forall(artifact.question.tags.contains))
+      return
+
     numFiles += 1
     scoreSum += artifact.question.score
     tagCountSum += artifact.question.tags.length

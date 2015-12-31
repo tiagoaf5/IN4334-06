@@ -13,9 +13,11 @@ object Main {
   }
 
   def main(args: Array[String]): Unit = {
-    val stormedDataSetDir = "src/main/resources/input/"
+    //val stormedDataSetDir = "D:\\FEUP\\erasmus\\MSREP\\stormed-dataset\\sample"
+    val stormedDataSetDir = "src/main/resources/input"
 
-    val analyser = new DiscussionAnalyser("src/main/resources/results/" + Calendar.getInstance().getTimeInMillis + ".csv")
+    val tagFilters = List("java", "android")
+    val analyser = new DiscussionAnalyser("src/main/resources/results/" + Calendar.getInstance().getTimeInMillis + "_filtered-by_" + tagFilters.mkString("_") + ".csv", tagFilters)
 
     Files.walk(Paths.get(stormedDataSetDir))
       .filter({(f:Path) => f.toString.endsWith(".json")})
