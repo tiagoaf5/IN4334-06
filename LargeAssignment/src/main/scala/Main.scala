@@ -17,7 +17,7 @@ object Main {
     val stormedDataSetDir = "src/main/resources/input"
 
     val tagFilters = List("java", "android")
-    val analyser = new DiscussionAnalyser("src/main/resources/results/" + Calendar.getInstance().getTimeInMillis + "_filtered-by_" + tagFilters.mkString("_") + ".csv", tagFilters)
+    val analyser = new DiscussionAnalyser("src/main/resources/results/", Calendar.getInstance().getTimeInMillis + "_filtered-by_" + tagFilters.mkString("_") + ".csv", tagFilters)
 
     Files.walk(Paths.get(stormedDataSetDir))
       .filter({(f:Path) => f.toString.endsWith(".json")})

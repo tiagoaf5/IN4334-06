@@ -5,16 +5,55 @@ import ch.usi.inf.reveal.parsing.artifact.StackOverflowArtifact
 /**
   * Created by luiscleto on 08/12/2015.
   */
-class DiscussionAnalyser(filename: String, tagFilters: Seq[String]) {
+class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[String]) {
   var numFiles = 0
-  var scoreSum = 0
-  var tagCountSum = 0
 
-  val pw = new PrintWriter(filename)
-  pw.write("id,score,tag_count,num_answers\n")
+  val pw_questions = new PrintWriter(filedir + "questions_" + filename)
+  pw_questions.write("title length," +  //TODO
+    "tags count," + //TODO
+    "tags popularity," + //TODO
+    "java %," + //TODO
+    "json %," + //TODO
+    "xml %," + //TODO
+    "stack traces %," + //TODO
+    "length," + //TODO
+    "words count," + //TODO
+    "day of week," + //TODO
+    "reputation," + //TODO
+    "intercalations," + //TODO
+    "score" + //TODO
+    "number of answers" + //TODO
+    "max answer score" + //TODO
+    "avg answer score" + //TODO
+    "min answer score" + //TODO
+    "number of comments" + //TODO
+    "max answer length" + //TODO
+    "avg answer length" + //TODO
+    "min answer length\n") //TODO
+
+  val pw_answers = new PrintWriter(filedir + "answers_" + filename)
+  pw_answers.write("first posted," +  //TODO
+    "same day as question," + //TODO
+    "java %," + //TODO
+    "json %," + //TODO
+    "xml %," + //TODO
+    "stack traces %," + //TODO
+    "length," + //TODO
+    "words count," + //TODO
+    "day of week," + //TODO
+    "reputation," + //TODO
+    "intercalations," + //TODO
+    "score" + //TODO
+    "number of comments" + //TODO
+    "max comment length" + //TODO
+    "avg comment length" + //TODO
+    "min comment length\n") //TODO
 
   def finish(): Unit = {
-    pw.close()
+    pw_questions.close()
+    pw_answers.close()
+
+    System.out.println("Analyzed a total of " + numFiles + " discussions.")
   }
 
   def processDiscussion(artifact: StackOverflowArtifact): Unit = {
@@ -23,9 +62,7 @@ class DiscussionAnalyser(filename: String, tagFilters: Seq[String]) {
       return
 
     numFiles += 1
-    scoreSum += artifact.question.score
-    tagCountSum += artifact.question.tags.length
 
-    pw.println(Array(artifact.id.toString, artifact.question.score, artifact.question.tags.length, artifact.answers.length).mkString(","))
+    pw_questions.println(Array(artifact.id.toString, artifact.question.score, artifact.question.tags.length, artifact.answers.length).mkString(","))
   }
 }
