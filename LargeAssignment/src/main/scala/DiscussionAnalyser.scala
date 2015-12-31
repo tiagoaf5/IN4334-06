@@ -1,7 +1,14 @@
 import java.io.{PrintWriter, File}
 
 import ch.usi.inf.reveal.parsing.artifact.{StackOverflowUser, StackOverflowArtifact}
-import ch.usi.inf.reveal.parsing.units.{TextReadabilityMetaInformation, InformationUnit}
+import ch.usi.inf.reveal.parsing.model.{TextFragmentNode, CommentNode, HASTNode}
+import ch.usi.inf.reveal.parsing.model.java.JavaASTNode
+import ch.usi.inf.reveal.parsing.model.json.JsonASTNode
+import ch.usi.inf.reveal.parsing.model.stacktraces.StackTraceASTNode
+import ch.usi.inf.reveal.parsing.model.xml.XmlASTNode
+import ch.usi.inf.reveal.parsing.units.{NaturalLanguageTaggedUnit, CodeTaggedUnit, TextReadabilityMetaInformation, InformationUnit}
+
+import scala.collection.mutable
 
 /**
   * Created by luiscleto on 08/12/2015.
@@ -11,11 +18,16 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
   ///stores aggregated data for a discussion's answers
   class AnswersProperties(val max_score: Int, val avg_score: Double, val min_score: Int, val max_length: Int,
                           val avg_length: Double, val min_length: Int)
-  class InformationUnitsProperties(val java_p: Double, val json_p: Double, val xml_p: Double, val stack_traces_p: Double,
+  class InformationUnitsProperties(val code_p: Double, val java_p: Double, val json_p: Double, val xml_p: Double, val stack_traces_p: Double,
                                    val total_length: Int, val words_count: Int, val intercalations: Int)
 
   val daysOfWeek = List("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
   var numFiles = 0
+
+  object CodeTypes extends Enumeration {
+    type CodeType = Value
+    val Java, XML, JSON, StackTrace, Undefined = Value
+  }
 
   val pw_questions = new PrintWriter(filedir + "questions_" + filename)
   pw_questions.write("id," +
@@ -33,9 +45,9 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "intercalations," + //TODO
     "score" +
     "number of answers" +
-    "max answer score" + //TODO
-    "avg answer score" + //TODO
-    "min answer score" + //TODO
+    "max answer score" +
+    "avg answer score" +
+    "min answer score" +
     "number of comments" +
     "max answer length" + //TODO
     "avg answer length" + //TODO
@@ -120,12 +132,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       minAnswerScore = Math.min(answer.score, minAnswerScore)
       avgAnswerScore += answer.score
 
-      val infIt = answer.informationUnits.iterator
-      while (infIt.hasNext) {
-        val informationUnit = infIt.next()
-        val stf = informationUnit.toString()
-        informationUnit.toString()
-      }
+      val iusProperties = processInformationUnits(answer.informationUnits)
+
     }
     avgAnswerScore /= artifact.answers.length
 
@@ -134,6 +142,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
   }
 
   def processInformationUnits(informationUnits: Seq[InformationUnit]): InformationUnitsProperties = {
+    var code_p: Double = 0
     var java_p: Double = 0
     var json_p: Double = 0
     var xml_p: Double = 0
@@ -144,13 +153,56 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
 
     val it = informationUnits.iterator
 
+    var lastUnit: InformationUnit = null
+
     while (it.hasNext) {
       val infUnit = it.next()
       total_length += infUnit.rawText.length
 
-    }
+      infUnit match {
+        case u: CodeTaggedUnit =>
+          if (lastUnit != null && lastUnit.isInstanceOf[NaturalLanguageTaggedUnit])
+            intercalations += 1
 
-    new InformationUnitsProperties(java_p, json_p, xml_p, stack_traces_p, total_length, words_count, intercalations)
+          code_p += u.rawText.length
+
+          var codeTypesFound: mutable.MutableList[CodeTypes.CodeType] = mutable.MutableList()
+
+          u.astNode.fragments.foreach {
+            case _: TextFragmentNode => println ("Text fragment in code ignored") //needs to be first since it derives from JavaASTNode
+            case _: JavaASTNode => codeTypesFound += CodeTypes.Java
+            case _: XmlASTNode => codeTypesFound += CodeTypes.XML
+            case _: JsonASTNode => codeTypesFound += CodeTypes.JSON
+            case _: StackTraceASTNode => codeTypesFound += CodeTypes.StackTrace
+            case _: CommentNode => println ("Comment node ignored")
+            case n => System.err.println ("Unidentified node found: " + n.toString)
+          }
+
+          if (codeTypesFound.toSet[CodeTypes.CodeType].size == 1) //check number of unique types
+            codeTypesFound.head match {
+              case CodeTypes.Java => java_p += infUnit.rawText.length
+              case CodeTypes.XML => xml_p += infUnit.rawText.length
+              case CodeTypes.JSON => json_p += infUnit.rawText.length
+              case CodeTypes.StackTrace => stack_traces_p += infUnit.rawText.length
+            }
+          else
+            System.err.println("Could not identify code type for fragment or found conflicting types")
+        case _: NaturalLanguageTaggedUnit =>
+          if (lastUnit != null && lastUnit.isInstanceOf[CodeTaggedUnit])
+            intercalations += 1
+          words_count += infUnit.rawText.split("\\W+").length
+        case _ => ???
+      }
+
+      lastUnit = infUnit
+    }
+    code_p /= total_length
+    java_p /= total_length
+    json_p /= total_length
+    xml_p /= total_length
+    stack_traces_p /= total_length
+
+    new InformationUnitsProperties(code_p, java_p, json_p, xml_p, stack_traces_p, total_length, words_count, intercalations)
   }
 
   def getOwnerReputation(owner: Option[StackOverflowUser]): String = {
