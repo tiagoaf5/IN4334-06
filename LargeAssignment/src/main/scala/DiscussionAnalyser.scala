@@ -1,6 +1,7 @@
 import java.io.PrintWriter
+import java.text.SimpleDateFormat
 
-import ch.usi.inf.reveal.parsing.artifact.{StackOverflowArtifact, StackOverflowUser}
+import ch.usi.inf.reveal.parsing.artifact.{StackOverflowComment, StackOverflowArtifact, StackOverflowUser}
 import ch.usi.inf.reveal.parsing.model.java.JavaASTNode
 import ch.usi.inf.reveal.parsing.model.json.JsonASTNode
 import ch.usi.inf.reveal.parsing.model.stacktraces.StackTraceASTNode
@@ -20,6 +21,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
                           val avg_length: Double, val min_length: Int)
   class InformationUnitsProperties(val code_p: Double, val java_p: Double, val json_p: Double, val xml_p: Double, val stack_traces_p: Double,
                                    val total_length: Int, val words_count: Int, val intercalations: Int)
+  class CommentsProperties(val max_length: Int, val avg_length: Double, val min_length: Int)
 
   val daysOfWeek = List("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
   var numFiles = 0
@@ -44,36 +46,37 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "day of week," +
     "reputation," +
     "intercalations," +
-    "score" +
-    "number of answers" +
-    "max answer score" +
-    "avg answer score" +
-    "min answer score" +
-    "number of comments" +
-    "max answer length" +
-    "avg answer length" +
+    "score," +
+    "number of answers," +
+    "max answer score," +
+    "avg answer score," +
+    "min answer score," +
+    "number of comments," +
+    "max answer length," +
+    "avg answer length," +
     "min answer length\n")
 
   val pw_answers = new PrintWriter(filedir + "answers_" + filename)
-  pw_answers.write("question_id," + //TODO
-    "id," + //TODO
-    "first posted," +  //TODO
-    "same day as question," + //TODO
-    "total code %," + //TODO
-    "java %," + //TODO
-    "json %," + //TODO
-    "xml %," + //TODO
-    "stack traces %," + //TODO
-    "length," + //TODO
-    "words count," + //TODO
-    "day of week," + //TODO
-    "reputation," + //TODO
-    "intercalations," + //TODO
-    "score" + //TODO
-    "number of comments" + //TODO
-    "max comment length" + //TODO
-    "avg comment length" + //TODO
-    "min comment length\n") //TODO
+  pw_answers.write("question_id," +
+    "id," +
+    "first posted," +
+    "same day as question," +
+    "total code %," +
+    "java %," +
+    "json %," +
+    "xml %," +
+    "stack traces %," +
+    "length," +
+    "words count," +
+    "day of week," +
+    "reputation," +
+    "intercalations," +
+    "score," +
+    "number of comments," +
+    "accepted," +
+    "max comment length," +
+    "avg comment length," +
+    "min comment length\n")
 
   def finish(): Unit = {
     pw_questions.close()
@@ -132,6 +135,10 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     var avgAnswerLength = 0.0
     var minAnswerLength = Int.MaxValue
 
+    val answerIds = for (ans <- artifact.answers) yield ans.id
+
+    val firstPostedId = answerIds.min
+
     while (it.hasNext) {
       val answer = it.next()
       maxAnswerScore = Math.max(answer.score, maxAnswerScore)
@@ -143,13 +150,61 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       maxAnswerLength = Math.max(iusProperties.total_length, maxAnswerLength)
       minAnswerLength = Math.min(iusProperties.total_length, minAnswerLength)
       avgAnswerLength += iusProperties.total_length
+
+      var commentsProperties: CommentsProperties = null
+      if (answer.comments.nonEmpty)
+        commentsProperties = processComments(answer.comments)
+
+      val fmt: SimpleDateFormat = new SimpleDateFormat("yyyyMMdd")
+      val sameDay = fmt.format(answer.creationDate).equals(fmt.format(artifact.question.creationDate))
+
+      //noinspection ScalaDeprecation
+      pw_answers.println(Array(artifact.question.id,
+        answer.id,
+        if (answer.id == firstPostedId) 1 else 0,
+        if (sameDay) 1 else 0,
+        iusProperties.code_p,
+        iusProperties.java_p,
+        iusProperties.json_p,
+        iusProperties.xml_p,
+        iusProperties.stack_traces_p,
+        iusProperties.total_length,
+        iusProperties.words_count,
+        daysOfWeek(answer.creationDate.getDay),
+        getOwnerReputation(answer.owner),
+        iusProperties.intercalations,
+        answer.score,
+        answer.comments.length,
+        if (answer.isAccepted) 1 else 0,
+        if (commentsProperties != null) commentsProperties.max_length else "-",
+        if (commentsProperties != null) commentsProperties.avg_length else "-",
+        if (commentsProperties != null) commentsProperties.min_length else "-"
+      ).mkString(","))
     }
     avgAnswerScore /= artifact.answers.length
     avgAnswerLength /= artifact.answers.length
 
 
-    //TODO write to answers file
     new AnswersProperties(maxAnswerScore, avgAnswerScore, minAnswerScore, maxAnswerLength, avgAnswerLength, minAnswerLength)
+  }
+
+  def processComments(comments: Seq[StackOverflowComment] ): CommentsProperties = {
+    val it = comments.iterator
+    var max_length: Int = 0
+    var min_length: Int = Int.MaxValue
+    var avg_length: Double = 0
+
+    while(it.hasNext) {
+      val comment = it.next()
+      val iuProps = processInformationUnits(comment.informationUnits)
+
+      max_length = Math.max(iuProps.total_length, max_length)
+      min_length = Math.min(iuProps.total_length, min_length)
+      avg_length += iuProps.total_length
+    }
+    avg_length /= comments.length
+
+    new CommentsProperties(max_length, avg_length, min_length)
   }
 
   def processInformationUnits(informationUnits: Seq[InformationUnit]): InformationUnitsProperties = {
