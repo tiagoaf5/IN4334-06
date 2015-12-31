@@ -16,7 +16,7 @@ object Main {
     //val stormedDataSetDir = "D:\\FEUP\\erasmus\\MSREP\\stormed-dataset\\sample"
     val stormedDataSetDir = "src/main/resources/input"
 
-    val tagFilters = List("java", "android")
+    val tagFilters = List("java")
     val analyser = new DiscussionAnalyser("src/main/resources/results/", Calendar.getInstance().getTimeInMillis + "_filtered-by_" + tagFilters.mkString("_") + ".csv", tagFilters)
 
     Files.walk(Paths.get(stormedDataSetDir))
