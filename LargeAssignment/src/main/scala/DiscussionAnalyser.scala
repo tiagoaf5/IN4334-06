@@ -1,12 +1,12 @@
-import java.io.{PrintWriter, File}
+import java.io.PrintWriter
 
-import ch.usi.inf.reveal.parsing.artifact.{StackOverflowUser, StackOverflowArtifact}
-import ch.usi.inf.reveal.parsing.model.{TextFragmentNode, CommentNode, HASTNode}
+import ch.usi.inf.reveal.parsing.artifact.{StackOverflowArtifact, StackOverflowUser}
 import ch.usi.inf.reveal.parsing.model.java.JavaASTNode
 import ch.usi.inf.reveal.parsing.model.json.JsonASTNode
 import ch.usi.inf.reveal.parsing.model.stacktraces.StackTraceASTNode
 import ch.usi.inf.reveal.parsing.model.xml.XmlASTNode
-import ch.usi.inf.reveal.parsing.units.{NaturalLanguageTaggedUnit, CodeTaggedUnit, TextReadabilityMetaInformation, InformationUnit}
+import ch.usi.inf.reveal.parsing.model.{CommentNode, TextFragmentNode}
+import ch.usi.inf.reveal.parsing.units.{CodeTaggedUnit, InformationUnit, NaturalLanguageTaggedUnit}
 
 import scala.collection.mutable
 
@@ -34,30 +34,32 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "title length," +
     "tags count," +
     "tags popularity," + //TODO
-    "java %," + //TODO
-    "json %," + //TODO
-    "xml %," + //TODO
-    "stack traces %," + //TODO
-    "length," + //TODO
-    "words count," + //TODO
+    "total code %," +
+    "java %," +
+    "json %," +
+    "xml %," +
+    "stack traces %," +
+    "length," +
+    "words count," +
     "day of week," +
     "reputation," +
-    "intercalations," + //TODO
+    "intercalations," +
     "score" +
     "number of answers" +
     "max answer score" +
     "avg answer score" +
     "min answer score" +
     "number of comments" +
-    "max answer length" + //TODO
-    "avg answer length" + //TODO
-    "min answer length\n") //TODO
+    "max answer length" +
+    "avg answer length" +
+    "min answer length\n")
 
   val pw_answers = new PrintWriter(filedir + "answers_" + filename)
   pw_answers.write("question_id," + //TODO
     "id," + //TODO
     "first posted," +  //TODO
     "same day as question," + //TODO
+    "total code %," + //TODO
     "java %," + //TODO
     "json %," + //TODO
     "xml %," + //TODO
@@ -92,28 +94,32 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     if (artifact.answers.nonEmpty)
       answersProperties = processAnswers(artifact)
 
+    val iuProperties = processInformationUnits(artifact.question.informationUnits)
+
+    //noinspection ScalaDeprecation
     pw_questions.println(Array(artifact.id.toString,
       artifact.question.title.length,
       artifact.question.tags.length,
       "TODO-Tag_Popularity",
-      "TODO-java%",
-      "TODO-json%",
-      "TODO-xml%",
-      "TODO-stack_traces%",
-      "TODO-length",
-      "TODO-words_count",
+      iuProperties.code_p,
+      iuProperties.java_p,
+      iuProperties.json_p,
+      iuProperties.xml_p,
+      iuProperties.stack_traces_p,
+      iuProperties.total_length,
+      iuProperties.words_count,
       daysOfWeek(artifact.question.creationDate.getDay),
       getOwnerReputation(artifact.question.owner),
-      "TODO-intercalations",
+      iuProperties.intercalations,
       artifact.question.score,
       artifact.answers.length,
       if (answersProperties != null) answersProperties.max_score else "-",
       if (answersProperties != null) answersProperties.avg_score else "-",
       if (answersProperties != null) answersProperties.min_score else "-",
       artifact.question.comments.length,
-      "TODO-max_answer_length",
-      "TODO-avg_answer_length",
-      "TODO-min_answer_length"
+      if (answersProperties != null) answersProperties.max_length else "-",
+      if (answersProperties != null) answersProperties.avg_length else "-",
+      if (answersProperties != null) answersProperties.min_length else "-"
     ).mkString(","))
   }
 
@@ -134,8 +140,13 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
 
       val iusProperties = processInformationUnits(answer.informationUnits)
 
+      maxAnswerLength = Math.max(iusProperties.total_length, maxAnswerLength)
+      minAnswerLength = Math.min(iusProperties.total_length, minAnswerLength)
+      avgAnswerLength += iusProperties.total_length
     }
     avgAnswerScore /= artifact.answers.length
+    avgAnswerLength /= artifact.answers.length
+
 
     //TODO write to answers file
     new AnswersProperties(maxAnswerScore, avgAnswerScore, minAnswerScore, maxAnswerLength, avgAnswerLength, minAnswerLength)
@@ -191,7 +202,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
           if (lastUnit != null && lastUnit.isInstanceOf[CodeTaggedUnit])
             intercalations += 1
           words_count += infUnit.rawText.split("\\W+").length
-        case _ => ???
+        case _ => throw new Exception("Unexpected Information Unit found")
       }
 
       lastUnit = infUnit
