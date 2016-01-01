@@ -35,7 +35,9 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
   pw_questions.write("id," +
     "title length," +
     "tags count," +
-    "tags popularity," + //TODO
+    "max tag popularity," + //TODO
+    "avg tag popularity," + //TODO
+    "min tag popularity," + //TODO
     "total code %," +
     "java %," +
     "json %," +
@@ -99,11 +101,25 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
 
     val iuProperties = processInformationUnits(artifact.question.informationUnits)
 
+    var maxTagPop: Long = 0
+    var minTagPop: Long = Long.MaxValue
+    var avgTagPop: Double = 0.0
+
+    for (tag <- artifact.question.tags) {
+      maxTagPop = Math.max(maxTagPop, TagBank.getTagPopularity(tag))
+      minTagPop = Math.min(minTagPop, TagBank.getTagPopularity(tag))
+      avgTagPop += TagBank.getTagPopularity(tag)
+    }
+    avgTagPop /= artifact.question.tags.length
+
+
     //noinspection ScalaDeprecation
     pw_questions.println(Array(artifact.id.toString,
       artifact.question.title.length,
       artifact.question.tags.length,
-      "TODO-Tag_Popularity",
+      maxTagPop,
+      avgTagPop,
+      minTagPop,
       iuProperties.code_p,
       iuProperties.java_p,
       iuProperties.json_p,
