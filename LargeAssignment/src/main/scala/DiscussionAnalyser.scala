@@ -35,9 +35,9 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
   pw_questions.write("id," +
     "title length," +
     "tags count," +
-    "max tag popularity," + //TODO
-    "avg tag popularity," + //TODO
-    "min tag popularity," + //TODO
+    "max tag popularity (besides java)," +
+    "avg tag popularity," +
+    "min tag popularity," +
     "total code %," +
     "java %," +
     "json %," +
@@ -106,7 +106,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     var avgTagPop: Double = 0.0
 
     for (tag <- artifact.question.tags) {
-      maxTagPop = Math.max(maxTagPop, TagBank.getTagPopularity(tag))
+      if (tag != "java")
+        maxTagPop = Math.max(maxTagPop, TagBank.getTagPopularity(tag))
       minTagPop = Math.min(minTagPop, TagBank.getTagPopularity(tag))
       avgTagPop += TagBank.getTagPopularity(tag)
     }
