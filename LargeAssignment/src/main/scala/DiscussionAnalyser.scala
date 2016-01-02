@@ -115,9 +115,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       avgTagPop += TagBank.getTagPopularity(tag)
     }
     avgTagPop /= artifact.question.tags.length
-
-    artifact.question.owner
-
+    
     //noinspection ScalaDeprecation
     pw_questions.println(Array(artifact.id.toString,
       artifact.question.title.length,
