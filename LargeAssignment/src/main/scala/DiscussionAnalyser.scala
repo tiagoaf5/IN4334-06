@@ -7,7 +7,7 @@ import ch.usi.inf.reveal.parsing.model.json.JsonASTNode
 import ch.usi.inf.reveal.parsing.model.stacktraces.StackTraceASTNode
 import ch.usi.inf.reveal.parsing.model.xml.XmlASTNode
 import ch.usi.inf.reveal.parsing.model.{CommentNode, TextFragmentNode}
-import ch.usi.inf.reveal.parsing.units.{CodeTaggedUnit, InformationUnit, NaturalLanguageTaggedUnit}
+import ch.usi.inf.reveal.parsing.units.{TextReadabilityMetaInformation, CodeTaggedUnit, InformationUnit, NaturalLanguageTaggedUnit}
 
 import scala.collection.mutable
 
@@ -45,6 +45,12 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "stack traces %," +
     "length," +
     "words count," +
+    "Coleman-Liau Index," +
+    "Flesch Reasing Ease Score," +
+    "Flesch-Kincaid Grade Level," +
+    "Automated Readability Index," +
+    "Gunning Fog Index," +
+    "SMOG Grade," +
     "day of week," +
     "reputation," +
     "acceptance rate," +
@@ -72,6 +78,12 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "stack traces %," +
     "length," +
     "words count," +
+    "Coleman-Liau Index," +
+    "Flesch Reasing Ease Score," +
+    "Flesch-Kincaid Grade Level," +
+    "Automated Readability Index," +
+    "Gunning Fog Index," +
+    "SMOG Grade," +
     "day of week," +
     "reputation," +
     "acceptance rate," +
@@ -96,8 +108,16 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       return
 
     numFiles += 1
-
+    val mis = artifact.question.metaInformation
     var answersProperties: AnswersProperties = null
+
+    var textReadability: TextReadabilityMetaInformation = null
+
+    for (mi <- artifact.question.metaInformation)
+      mi match {
+        case m:TextReadabilityMetaInformation => textReadability = m
+        case _ =>
+    }
 
     if (artifact.answers.nonEmpty)
       answersProperties = processAnswers(artifact)
@@ -130,6 +150,12 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       iuProperties.stack_traces_p,
       iuProperties.total_length,
       iuProperties.words_count,
+      if (textReadability != null) textReadability.colemanLiauIndex else "-",
+      if (textReadability != null) textReadability.fleshReadingEaseScore else "-",
+      if (textReadability != null) textReadability.fleshKincaidGradeLevel else "-",
+      if (textReadability != null) textReadability.automatedReadingIndex else "-",
+      if (textReadability != null) textReadability.gunningFogIndex else "-",
+      if (textReadability != null) textReadability.smogIndex else "-",
       daysOfWeek(artifact.question.creationDate.getDay),
       getOwnerReputation(artifact.question.owner),
       getOwnerAcceptanceRate(artifact.question.owner),
@@ -168,6 +194,14 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
 
       val iusProperties = processInformationUnits(answer.informationUnits)
 
+      var textReadability: TextReadabilityMetaInformation = null
+
+      for (mi <- answer.metaInformation)
+        mi match {
+          case m:TextReadabilityMetaInformation => textReadability = m
+          case _ =>
+        }
+
       maxAnswerLength = Math.max(iusProperties.total_length, maxAnswerLength)
       minAnswerLength = Math.min(iusProperties.total_length, minAnswerLength)
       avgAnswerLength += iusProperties.total_length
@@ -191,6 +225,12 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
         iusProperties.stack_traces_p,
         iusProperties.total_length,
         iusProperties.words_count,
+        if (textReadability != null) textReadability.colemanLiauIndex else "-",
+        if (textReadability != null) textReadability.fleshReadingEaseScore else "-",
+        if (textReadability != null) textReadability.fleshKincaidGradeLevel else "-",
+        if (textReadability != null) textReadability.automatedReadingIndex else "-",
+        if (textReadability != null) textReadability.gunningFogIndex else "-",
+        if (textReadability != null) textReadability.smogIndex else "-",
         daysOfWeek(answer.creationDate.getDay),
         getOwnerReputation(answer.owner),
         getOwnerAcceptanceRate(answer.owner),
