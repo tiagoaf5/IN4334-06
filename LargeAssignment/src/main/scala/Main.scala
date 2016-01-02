@@ -13,7 +13,7 @@ object Main {
   }
 
   def main(args: Array[String]): Unit = {
-    //val stormedDataSetDir = "D:\\FEUP\\erasmus\\MSREP\\stormed-dataset\\sample"
+    //val stormedDataSetDir = "D:\\FEUP\\erasmus\\MSREP\\stormed-dataset\\sample2"
     val stormedDataSetDir = "src/main/resources/input"
 
     val tagFilters = List("java")

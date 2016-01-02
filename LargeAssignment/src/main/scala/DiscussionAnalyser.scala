@@ -150,25 +150,25 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       iuProperties.stack_traces_p,
       iuProperties.total_length,
       iuProperties.words_count,
-      if (textReadability != null) textReadability.colemanLiauIndex else "-",
-      if (textReadability != null) textReadability.fleshReadingEaseScore else "-",
-      if (textReadability != null) textReadability.fleshKincaidGradeLevel else "-",
-      if (textReadability != null) textReadability.automatedReadingIndex else "-",
-      if (textReadability != null) textReadability.gunningFogIndex else "-",
-      if (textReadability != null) textReadability.smogIndex else "-",
-      daysOfWeek(artifact.question.creationDate.getDay),
+      if (textReadability != null) textReadability.colemanLiauIndex else "NA",
+      if (textReadability != null) textReadability.fleshReadingEaseScore else "NA",
+      if (textReadability != null) textReadability.fleshKincaidGradeLevel else "NA",
+      if (textReadability != null) textReadability.automatedReadingIndex else "NA",
+      if (textReadability != null) textReadability.gunningFogIndex else "NA",
+      if (textReadability != null) textReadability.smogIndex else "NA",
+      artifact.question.creationDate.getDay,
       getOwnerReputation(artifact.question.owner),
 //      getOwnerAcceptanceRate(artifact.question.owner), STORMED always returns NONE
       iuProperties.intercalations,
       artifact.question.score,
       artifact.answers.length,
-      if (answersProperties != null) answersProperties.max_score else "-",
-      if (answersProperties != null) answersProperties.avg_score else "-",
-      if (answersProperties != null) answersProperties.min_score else "-",
+      if (answersProperties != null) answersProperties.max_score else "0",
+      if (answersProperties != null) answersProperties.avg_score else "0",
+      if (answersProperties != null) answersProperties.min_score else "0",
       artifact.question.comments.length,
-      if (answersProperties != null) answersProperties.max_length else "-",
-      if (answersProperties != null) answersProperties.avg_length else "-",
-      if (answersProperties != null) answersProperties.min_length else "-",
+      if (answersProperties != null) answersProperties.max_length else "0",
+      if (answersProperties != null) answersProperties.avg_length else "0",
+      if (answersProperties != null) answersProperties.min_length else "0",
       if (artifact.answers.exists(_.isAccepted)) "1" else "0"
     ).mkString(","))
   }
@@ -225,22 +225,22 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
         iusProperties.stack_traces_p,
         iusProperties.total_length,
         iusProperties.words_count,
-        if (textReadability != null) textReadability.colemanLiauIndex else "-",
-        if (textReadability != null) textReadability.fleshReadingEaseScore else "-",
-        if (textReadability != null) textReadability.fleshKincaidGradeLevel else "-",
-        if (textReadability != null) textReadability.automatedReadingIndex else "-",
-        if (textReadability != null) textReadability.gunningFogIndex else "-",
-        if (textReadability != null) textReadability.smogIndex else "-",
-        daysOfWeek(answer.creationDate.getDay),
+        if (textReadability != null) textReadability.colemanLiauIndex else "NA",
+        if (textReadability != null) textReadability.fleshReadingEaseScore else "NA",
+        if (textReadability != null) textReadability.fleshKincaidGradeLevel else "NA",
+        if (textReadability != null) textReadability.automatedReadingIndex else "NA",
+        if (textReadability != null) textReadability.gunningFogIndex else "NA",
+        if (textReadability != null) textReadability.smogIndex else "NA",
+        answer.creationDate.getDay,
         getOwnerReputation(answer.owner),
 //        getOwnerAcceptanceRate(answer.owner), STORMED always returns NONE
         iusProperties.intercalations,
         answer.score,
         answer.comments.length,
         if (answer.isAccepted) 1 else 0,
-        if (commentsProperties != null) commentsProperties.max_length else "-",
-        if (commentsProperties != null) commentsProperties.avg_length else "-",
-        if (commentsProperties != null) commentsProperties.min_length else "-"
+        if (commentsProperties != null) commentsProperties.max_length else "0",
+        if (commentsProperties != null) commentsProperties.avg_length else "0",
+        if (commentsProperties != null) commentsProperties.min_length else "0"
       ).mkString(","))
     }
     avgAnswerScore /= artifact.answers.length
@@ -297,7 +297,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
           var codeTypesFound: mutable.MutableList[CodeTypes.CodeType] = mutable.MutableList()
 
           u.astNode.fragments.foreach {
-            case _: TextFragmentNode => println ("Text fragment in code ignored") //needs to be first since it derives from JavaASTNode
+            case _: TextFragmentNode => //println ("Text fragment in code ignored") //needs to be first since it derives from JavaASTNode
             case _: JavaASTNode => codeTypesFound += CodeTypes.Java
             case _: XmlASTNode => codeTypesFound += CodeTypes.XML
             case _: JsonASTNode => codeTypesFound += CodeTypes.JSON
@@ -338,10 +338,10 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       case Some(o) =>
         o.acceptRate match {
           case Some(ar) => ar.toString
-          case None => "-"
+          case None => "NA"
         }
       case None =>
-        "No owner"
+        "NA"
     }
   }
 
@@ -350,7 +350,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       case Some(o) =>
         o.reputation.toString
       case None =>
-        "No owner"
+        "0"
     }
   }
 }

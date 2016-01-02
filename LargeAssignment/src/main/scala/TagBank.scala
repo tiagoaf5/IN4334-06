@@ -2,7 +2,7 @@ import java.io.{File, FileWriter, FileOutputStream, PrintWriter}
 
 import scala.collection.immutable.HashMap
 import scala.io.{StdIn, Source}
-import scalaj.http.Http
+import scalaj.http.{HttpResponse, Http}
 
 /**
   * Created by luiscleto on 01/01/2016.
@@ -38,14 +38,29 @@ object TagBank {
   def addToTagCollection(tagName: String): Long = {
     print("Fetching new tag: " + tagName + "... ")
     var pop: Long = 0
+    var response: HttpResponse[String] = null
 
-    var response = Http("https://api.stackexchange.com/2.2/search?filter=total&order=desc&site=stackoverflow&sort=activity&tagged="+tagName).asString
+    while (response == null) {
+      try
+        response = Http("https://api.stackexchange.com/2.2/search?filter=total&order=desc&site=stackoverflow&sort=activity&tagged=" + tagName).asString
+      catch {
+        case _: Exception => response = null
+      }
+    }
     while (response.code != 200) {
       System.err.println("Stack exchange API failed to reply: code " + response.code.toString)
       System.err.print("Try again? (y/X)")
       val reply = StdIn.readChar()
-      if (reply.toLower == 'y')
-        response = Http("https://api.stackexchange.com/2.2/search?filter=total&order=desc&site=stackoverflow&sort=activity&tagged="+tagName).asString
+      if (reply.toLower == 'y') {
+        response = null
+        while (response == null) {
+          try
+            response = Http("https://api.stackexchange.com/2.2/search?filter=total&order=desc&site=stackoverflow&sort=activity&tagged=" + tagName).asString
+          catch {
+            case _: Exception => response = null
+          }
+        }
+      }
       else
         throw new Exception("stack exchange API failed to reply: code " + response.code.toString)
     }
