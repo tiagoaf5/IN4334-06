@@ -47,6 +47,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "words count," +
     "day of week," +
     "reputation," +
+    "acceptance rate," +
     "intercalations," +
     "score," +
     "number of answers," +
@@ -56,7 +57,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "number of comments," +
     "max answer length," +
     "avg answer length," +
-    "min answer length\n")
+    "min answer length," +
+    "has accepted answer\n")
 
   val pw_answers = new PrintWriter(filedir + "answers_" + filename)
   pw_answers.write("question_id," +
@@ -72,6 +74,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "words count," +
     "day of week," +
     "reputation," +
+    "acceptance rate," +
     "intercalations," +
     "score," +
     "number of comments," +
@@ -113,6 +116,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     }
     avgTagPop /= artifact.question.tags.length
 
+    artifact.question.owner
 
     //noinspection ScalaDeprecation
     pw_questions.println(Array(artifact.id.toString,
@@ -130,6 +134,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       iuProperties.words_count,
       daysOfWeek(artifact.question.creationDate.getDay),
       getOwnerReputation(artifact.question.owner),
+      getOwnerAcceptanceRate(artifact.question.owner),
       iuProperties.intercalations,
       artifact.question.score,
       artifact.answers.length,
@@ -139,7 +144,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       artifact.question.comments.length,
       if (answersProperties != null) answersProperties.max_length else "-",
       if (answersProperties != null) answersProperties.avg_length else "-",
-      if (answersProperties != null) answersProperties.min_length else "-"
+      if (answersProperties != null) answersProperties.min_length else "-",
+      if (artifact.answers.exists(_.isAccepted)) "1" else "0"
     ).mkString(","))
   }
 
@@ -189,6 +195,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
         iusProperties.words_count,
         daysOfWeek(answer.creationDate.getDay),
         getOwnerReputation(answer.owner),
+        getOwnerAcceptanceRate(answer.owner),
         iusProperties.intercalations,
         answer.score,
         answer.comments.length,
@@ -286,6 +293,18 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     stack_traces_p /= total_length
 
     new InformationUnitsProperties(code_p, java_p, json_p, xml_p, stack_traces_p, total_length, words_count, intercalations)
+  }
+
+  def getOwnerAcceptanceRate(owner: Option[StackOverflowUser]): String = {
+    owner match {
+      case Some(o) =>
+        o.acceptRate match {
+          case Some(ar) => ar.toString
+          case None => "-"
+        }
+      case None =>
+        "No owner"
+    }
   }
 
   def getOwnerReputation(owner: Option[StackOverflowUser]): String = {
