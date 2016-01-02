@@ -53,7 +53,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "SMOG Grade," +
     "day of week," +
     "reputation," +
-    "acceptance rate," +
+//    "acceptance rate," + STORMED always returns NONE
     "intercalations," +
     "score," +
     "number of answers," +
@@ -86,7 +86,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "SMOG Grade," +
     "day of week," +
     "reputation," +
-    "acceptance rate," +
+//    "acceptance rate," + STORMED always returns NONE
     "intercalations," +
     "score," +
     "number of comments," +
@@ -158,7 +158,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       if (textReadability != null) textReadability.smogIndex else "-",
       daysOfWeek(artifact.question.creationDate.getDay),
       getOwnerReputation(artifact.question.owner),
-      getOwnerAcceptanceRate(artifact.question.owner),
+//      getOwnerAcceptanceRate(artifact.question.owner), STORMED always returns NONE
       iuProperties.intercalations,
       artifact.question.score,
       artifact.answers.length,
@@ -233,7 +233,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
         if (textReadability != null) textReadability.smogIndex else "-",
         daysOfWeek(answer.creationDate.getDay),
         getOwnerReputation(answer.owner),
-        getOwnerAcceptanceRate(answer.owner),
+//        getOwnerAcceptanceRate(answer.owner), STORMED always returns NONE
         iusProperties.intercalations,
         answer.score,
         answer.comments.length,

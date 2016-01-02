@@ -1,7 +1,7 @@
 import java.io.{File, FileWriter, FileOutputStream, PrintWriter}
 
 import scala.collection.immutable.HashMap
-import scala.io.Source
+import scala.io.{StdIn, Source}
 import scalaj.http.Http
 
 /**
@@ -39,9 +39,16 @@ object TagBank {
     print("Fetching new tag: " + tagName + "... ")
     var pop: Long = 0
 
-    val response = Http("https://api.stackexchange.com/2.2/search?filter=total&order=desc&site=stackoverflow&sort=activity&tagged="+tagName).asString
-    if (response.code != 200)
-      throw new Exception("stack exchange API failed to reply: code " + response.code.toString)
+    var response = Http("https://api.stackexchange.com/2.2/search?filter=total&order=desc&site=stackoverflow&sort=activity&tagged="+tagName).asString
+    while (response.code != 200) {
+      System.err.println("Stack exchange API failed to reply: code " + response.code.toString)
+      System.err.print("Try again? (y/X)")
+      val reply = StdIn.readChar()
+      if (reply.toLower == 'y')
+        response = Http("https://api.stackexchange.com/2.2/search?filter=total&order=desc&site=stackoverflow&sort=activity&tagged="+tagName).asString
+      else
+        throw new Exception("stack exchange API failed to reply: code " + response.code.toString)
+    }
 
     pop = response.body.split("[^0-9]").filter(_.length > 0).head.toLong
 
