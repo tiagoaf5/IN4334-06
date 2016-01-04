@@ -114,13 +114,13 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "first posted," +
     "same day as question," +
     "question view count," +
-    "q. tags count," +
-    "q. max tag popularity (no java)," +
-    "q. avg tag popularity," +
-    "q. min tag popularity," +
-    "q. local max tag popularity (no java)," +
-    "q. local avg tag popularity," +
-    "q. local min tag popularity," +
+    "q tags count," +
+    "q max tag popularity (no java)," +
+    "q avg tag popularity," +
+    "q min tag popularity," +
+    "q local max tag popularity (no java)," +
+    "q local avg tag popularity," +
+    "q local min tag popularity," +
     "total code %," +
     "java %," +
     "json %," +
