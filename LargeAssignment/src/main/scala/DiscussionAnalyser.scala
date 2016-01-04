@@ -1,5 +1,7 @@
 import java.io.PrintWriter
 import java.text.SimpleDateFormat
+import java.time.{ZoneId, LocalDate}
+import java.time.format.DateTimeFormatter
 
 import ch.usi.inf.reveal.parsing.artifact.{StackOverflowComment, StackOverflowArtifact, StackOverflowUser}
 import ch.usi.inf.reveal.parsing.model.java.JavaASTNode
@@ -21,7 +23,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
   class AnswersProperties(val max_score: Int, val avg_score: Double, val min_score: Int, val max_length: Int,
                           val avg_length: Double, val min_length: Int)
   class InformationUnitsProperties(val code_p: Double, val java_p: Double, val json_p: Double, val xml_p: Double, val stack_traces_p: Double,
-                                   val total_length: Int, val words_count: Int, val intercalations: Int, val text_speak_count: Int, val urls_count: Int, val emails_count: Int)
+                                   val total_length: Int, val words_count: Int, val intercalations: Int, val text_speak_count: Int, val urls_count: Int)
   class CommentsProperties(val max_length: Int, val avg_length: Double, val min_length: Int)
 
   val daysOfWeek = List("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
@@ -54,6 +56,10 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "y","y w","y!a","y'all","y/n","y/o","y00","y2b","y2k","ya","yaaf","yaafm","yaagf","yaai","yaf","yafi","yag","yall","yapa","yaqw","yarly","yas","yasan","yasf","yasfg","yasg","yasw","yatb","yatwl","yaw","yayo","ybbg","ybs","ybya","ycliu","ycmtsu","ycntu","yctwuw","ydpos","ydtm","ydufc","yduwtk","ye","yea","yer","yermom","yesh","yew","yfb","yfg","yfi","ygg","ygm","ygp","ygpm","ygrr","ygtbfkm","ygtbk","ygtbkm","ygtbsm","ygtsr","yh","yhbt","yhew","yhf","yhgtbsm","yhl","yhm","yhpm","yhtbt","yid","yim","yiwtgo","yk","yki","ykisa","ykm","ykn","ykw","ykwim","ykwya","ykywywm","ylb","ym","ymbkm","yme","ymfp","ymg2c","ymgtc","ymiaw","ymislidi","ymmd","ymmv","ymrasu","yn","yng","ynk","ynm","ynt","ynw","yo","yo'","yodo","yolo","yolt","yomank","yooh","yor","youngin","yoy","ypmf","ypmo","ypom","yqw","yr","yrbk","yrms","yrs","yrsaf","yrsm","yrss","yru","yrubm","yrusm","ys","ysa","ysal","ysati","ysf","ysic","ysitm","ysm","ysoab","yss","yswnt","yt","ytd","ytf","ytfwudt","ythwudt","ytis","ytm","ytmnd","yty","yu","yua","yuo","yup","yur","yust","yvfw","yvw","yw","ywapom","ywia","ywic","yws","ywsyls","ywud","ywvm","ywywm","yysw",
     "z'omg","z0mg","zex","zh","zig","zomfg","zomg","zomgzorrz","zoot","zot","zt","zup")
 
+  val dataDumpDateStr = "2015-08-19"
+  val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+  val dataDumpDate = LocalDate.parse(dataDumpDateStr, formatter)
+
   object CodeTypes extends Enumeration {
     type CodeType = Value
     val Java, XML, JSON, StackTrace, Undefined = Value
@@ -61,6 +67,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
 
   val pw_questions = new PrintWriter(filedir + "questions_" + filename)
   pw_questions.write("id," +
+    "days since posted," +
     "title length," +
     "view count," +
     "tags count," +
@@ -79,7 +86,6 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "words count," +
     "text speak count," +
     "urls count," +
-    "emails count," +
     "Coleman-Liau Index," +
     "Flesch Reading Ease Score," +
     "Flesch-Kincaid Grade Level," +
@@ -104,6 +110,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
   val pw_answers = new PrintWriter(filedir + "answers_" + filename)
   pw_answers.write("question_id," +
     "id," +
+    "days since posted," +
     "first posted," +
     "same day as question," +
     "question view count," +
@@ -123,7 +130,6 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "words count," +
     "text speak count," +
     "urls count," +
-    "emails count," +
     "Coleman-Liau Index," +
     "Flesch Reading Ease Score," +
     "Flesch-Kincaid Grade Level," +
@@ -152,6 +158,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
 
     if(!tagFilters.forall(artifact.question.tags.contains))
       return
+
+    val daysSincePosted = dataDumpDate.toEpochDay - artifact.question.creationDate.toInstant.atZone(ZoneId.systemDefault()).toLocalDate.toEpochDay
 
     numFiles += 1
     val mis = artifact.question.metaInformation
@@ -196,6 +204,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
 
     //noinspection ScalaDeprecation
     pw_questions.println(Array(artifact.id.toString,
+      daysSincePosted,
       artifact.question.title.length,
       artifact.question.viewCount,
       artifact.question.tags.length,
@@ -214,7 +223,6 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       iuProperties.words_count,
       iuProperties.text_speak_count,
       iuProperties.urls_count,
-      iuProperties.emails_count,
       if (textReadability != null) textReadability.colemanLiauIndex else "NA",
       if (textReadability != null) textReadability.fleshReadingEaseScore else "NA",
       if (textReadability != null) textReadability.fleshKincaidGradeLevel else "NA",
@@ -278,9 +286,12 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       val fmt: SimpleDateFormat = new SimpleDateFormat("yyyyMMdd")
       val sameDay = fmt.format(answer.creationDate).equals(fmt.format(artifact.question.creationDate))
 
+      val daysSincePosted = dataDumpDate.toEpochDay - answer.creationDate.toInstant.atZone(ZoneId.systemDefault()).toLocalDate.toEpochDay
+
       //noinspection ScalaDeprecation
       pw_answers.println(Array(artifact.question.id,
         answer.id,
+        daysSincePosted,
         if (answer.id == firstPostedId) 1 else 0,
         if (sameDay) 1 else 0,
         viewCount,
@@ -300,7 +311,6 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
         iusProperties.words_count,
         iusProperties.text_speak_count,
         iusProperties.urls_count,
-        iusProperties.emails_count,
         if (textReadability != null) textReadability.colemanLiauIndex else "NA",
         if (textReadability != null) textReadability.fleshReadingEaseScore else "NA",
         if (textReadability != null) textReadability.fleshKincaidGradeLevel else "NA",
@@ -355,10 +365,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     var words_count: Int = 0
     var intercalations: Int = 0
     var text_speak_count: Int = 0
-    var emails_count: Int = 0
     var urls_count: Int = 0
 
-    val email_regex = "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])".r
     val url_regex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]".r
 
     val it = informationUnits.iterator
@@ -403,7 +411,6 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
           val words = infUnit.rawText.split("\\W+")
           words_count += words.length
           text_speak_count += words.count(p => textSpeakDictionary.contains(p.toLowerCase))
-          emails_count += email_regex.findAllIn(infUnit.rawText).length
           urls_count += url_regex.findAllIn(infUnit.rawText).length
         case _ => throw new Exception("Unexpected Information Unit found")
       }
@@ -416,7 +423,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     xml_p /= total_length
     stack_traces_p /= total_length
 
-    new InformationUnitsProperties(code_p, java_p, json_p, xml_p, stack_traces_p, total_length, words_count, intercalations, text_speak_count, urls_count, emails_count)
+    new InformationUnitsProperties(code_p, java_p, json_p, xml_p, stack_traces_p, total_length, words_count, intercalations, text_speak_count, urls_count)
   }
 
   def getOwnerAcceptanceRate(owner: Option[StackOverflowUser]): String = {
