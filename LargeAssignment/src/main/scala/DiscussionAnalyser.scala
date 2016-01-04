@@ -14,7 +14,7 @@ import scala.collection.mutable
 /**
   * Created by luiscleto on 08/12/2015.
   */
-class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[String]) {
+class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[String], localTags: LocalTagBank) {
 
   ///stores aggregated data for a discussion's answers
   class AnswersProperties(val max_score: Int, val avg_score: Double, val min_score: Int, val max_length: Int,
@@ -34,10 +34,14 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
   val pw_questions = new PrintWriter(filedir + "questions_" + filename)
   pw_questions.write("id," +
     "title length," +
+    "view count," +
     "tags count," +
-    "max tag popularity (besides java)," +
+    "max tag popularity (no java)," +
     "avg tag popularity," +
     "min tag popularity," +
+    "local max tag popularity (no java)," +
+    "local avg tag popularity," +
+    "local min tag popularity," +
     "total code %," +
     "java %," +
     "json %," +
@@ -46,7 +50,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "length," +
     "words count," +
     "Coleman-Liau Index," +
-    "Flesch Reasing Ease Score," +
+    "Flesch Reading Ease Score," +
     "Flesch-Kincaid Grade Level," +
     "Automated Readability Index," +
     "Gunning Fog Index," +
@@ -71,6 +75,14 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "id," +
     "first posted," +
     "same day as question," +
+    "question view count," +
+    "q. tags count," +
+    "q. max tag popularity (no java)," +
+    "q. avg tag popularity," +
+    "q. min tag popularity," +
+    "q. local max tag popularity (no java)," +
+    "q. local avg tag popularity," +
+    "q. local min tag popularity," +
     "total code %," +
     "java %," +
     "json %," +
@@ -79,7 +91,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "length," +
     "words count," +
     "Coleman-Liau Index," +
-    "Flesch Reasing Ease Score," +
+    "Flesch Reading Ease Score," +
     "Flesch-Kincaid Grade Level," +
     "Automated Readability Index," +
     "Gunning Fog Index," +
@@ -119,11 +131,6 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
         case _ =>
     }
 
-    if (artifact.answers.nonEmpty)
-      answersProperties = processAnswers(artifact)
-
-    val iuProperties = processInformationUnits(artifact.question.informationUnits)
-
     var maxTagPop: Long = 0
     var minTagPop: Long = Long.MaxValue
     var avgTagPop: Double = 0.0
@@ -135,14 +142,35 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       avgTagPop += TagBank.getTagPopularity(tag)
     }
     avgTagPop /= artifact.question.tags.length
-    
+
+    var lmaxTagPop: Long = 0
+    var lminTagPop: Long = Long.MaxValue
+    var lavgTagPop: Double = 0.0
+
+    for (tag <- artifact.question.tags) {
+      if (tag != "java")
+        lmaxTagPop = Math.max(lmaxTagPop, localTags.getTagPopularity(tag))
+      lminTagPop = Math.min(lminTagPop, localTags.getTagPopularity(tag))
+      lavgTagPop += localTags.getTagPopularity(tag)
+    }
+    lavgTagPop /= artifact.question.tags.length
+
+    if (artifact.answers.nonEmpty)
+      answersProperties = processAnswers(artifact, artifact.question.viewCount, artifact.question.tags.length, maxTagPop, avgTagPop, minTagPop, lmaxTagPop, lavgTagPop, lminTagPop)
+
+    val iuProperties = processInformationUnits(artifact.question.informationUnits)
+
     //noinspection ScalaDeprecation
     pw_questions.println(Array(artifact.id.toString,
       artifact.question.title.length,
+      artifact.question.viewCount,
       artifact.question.tags.length,
       maxTagPop,
       avgTagPop,
       minTagPop,
+      lmaxTagPop,
+      lavgTagPop,
+      lminTagPop,
       iuProperties.code_p,
       iuProperties.java_p,
       iuProperties.json_p,
@@ -173,7 +201,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     ).mkString(","))
   }
 
-  def processAnswers(artifact: StackOverflowArtifact): AnswersProperties = {
+  def processAnswers(artifact: StackOverflowArtifact, viewCount: Int, tagCount: Int, maxTagPop: Long, avgTagPop: Double, minTagPop: Long, lmaxTagPop: Long, lavgTagPop: Double, lminTagPop: Long): AnswersProperties = {
     val it = artifact.answers.iterator
     var maxAnswerScore = 0
     var avgAnswerScore = 0.0
@@ -218,6 +246,14 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
         answer.id,
         if (answer.id == firstPostedId) 1 else 0,
         if (sameDay) 1 else 0,
+        viewCount,
+        tagCount,
+        maxTagPop,
+        avgTagPop,
+        minTagPop,
+        lmaxTagPop,
+        lavgTagPop,
+        lminTagPop,
         iusProperties.code_p,
         iusProperties.java_p,
         iusProperties.json_p,

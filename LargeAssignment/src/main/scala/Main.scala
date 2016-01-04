@@ -16,8 +16,10 @@ object Main {
     //val stormedDataSetDir = "D:\\FEUP\\erasmus\\MSREP\\stormed-dataset\\sample2"
     val stormedDataSetDir = "src/main/resources/input"
 
+    val localTags = new LocalTagBank(stormedDataSetDir)
+
     val tagFilters = List("java")
-    val analyser = new DiscussionAnalyser("src/main/resources/results/", Calendar.getInstance().getTimeInMillis + "_filtered-by_" + tagFilters.mkString("_") + ".csv", tagFilters)
+    val analyser = new DiscussionAnalyser("src/main/resources/results/", Calendar.getInstance().getTimeInMillis + "_filtered-by_" + tagFilters.mkString("_") + ".csv", tagFilters, localTags)
 
     Files.walk(Paths.get(stormedDataSetDir))
       .filter({(f:Path) => f.toString.endsWith(".json")})

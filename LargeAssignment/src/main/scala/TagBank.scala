@@ -1,6 +1,6 @@
 import java.io.{File, FileWriter, FileOutputStream, PrintWriter}
 
-import scala.collection.immutable.HashMap
+import scala.collection.mutable
 import scala.io.{StdIn, Source}
 import scalaj.http.{HttpResponse, Http}
 
@@ -12,7 +12,7 @@ object TagBank {
   val tagFileName = "tag_popularity.msr"
 
 
-  var tagPopularity: Map[String, Long] = new HashMap[String, Long]
+  var tagPopularity: scala.collection.mutable.Map[String, Long] = new mutable.HashMap[String, Long]
   loadTagsFromFile()
 
   def loadTagsFromFile(): Unit = {
