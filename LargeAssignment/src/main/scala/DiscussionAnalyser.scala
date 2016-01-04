@@ -21,7 +21,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
   class AnswersProperties(val max_score: Int, val avg_score: Double, val min_score: Int, val max_length: Int,
                           val avg_length: Double, val min_length: Int)
   class InformationUnitsProperties(val code_p: Double, val java_p: Double, val json_p: Double, val xml_p: Double, val stack_traces_p: Double,
-                                   val total_length: Int, val words_count: Int, val intercalations: Int, val text_speak_count: Int)
+                                   val total_length: Int, val words_count: Int, val intercalations: Int, val text_speak_count: Int, val urls_count: Int, val emails_count: Int)
   class CommentsProperties(val max_length: Int, val avg_length: Double, val min_length: Int)
 
   val daysOfWeek = List("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
@@ -78,6 +78,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "length," +
     "words count," +
     "text speak count," +
+    "urls count," +
+    "emails count," +
     "Coleman-Liau Index," +
     "Flesch Reading Ease Score," +
     "Flesch-Kincaid Grade Level," +
@@ -120,6 +122,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "length," +
     "words count," +
     "text speak count," +
+    "urls count," +
+    "emails count," +
     "Coleman-Liau Index," +
     "Flesch Reading Ease Score," +
     "Flesch-Kincaid Grade Level," +
@@ -209,6 +213,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       iuProperties.total_length,
       iuProperties.words_count,
       iuProperties.text_speak_count,
+      iuProperties.urls_count,
+      iuProperties.emails_count,
       if (textReadability != null) textReadability.colemanLiauIndex else "NA",
       if (textReadability != null) textReadability.fleshReadingEaseScore else "NA",
       if (textReadability != null) textReadability.fleshKincaidGradeLevel else "NA",
@@ -293,6 +299,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
         iusProperties.total_length,
         iusProperties.words_count,
         iusProperties.text_speak_count,
+        iusProperties.urls_count,
+        iusProperties.emails_count,
         if (textReadability != null) textReadability.colemanLiauIndex else "NA",
         if (textReadability != null) textReadability.fleshReadingEaseScore else "NA",
         if (textReadability != null) textReadability.fleshKincaidGradeLevel else "NA",
@@ -347,7 +355,11 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     var words_count: Int = 0
     var intercalations: Int = 0
     var text_speak_count: Int = 0
+    var emails_count: Int = 0
+    var urls_count: Int = 0
 
+    val email_regex = "(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])".r
+    val url_regex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]".r
 
     val it = informationUnits.iterator
 
@@ -391,6 +403,8 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
           val words = infUnit.rawText.split("\\W+")
           words_count += words.length
           text_speak_count += words.count(p => textSpeakDictionary.contains(p.toLowerCase))
+          emails_count += email_regex.findAllIn(infUnit.rawText).length
+          urls_count += url_regex.findAllIn(infUnit.rawText).length
         case _ => throw new Exception("Unexpected Information Unit found")
       }
 
@@ -402,7 +416,7 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     xml_p /= total_length
     stack_traces_p /= total_length
 
-    new InformationUnitsProperties(code_p, java_p, json_p, xml_p, stack_traces_p, total_length, words_count, intercalations, text_speak_count)
+    new InformationUnitsProperties(code_p, java_p, json_p, xml_p, stack_traces_p, total_length, words_count, intercalations, text_speak_count, urls_count, emails_count)
   }
 
   def getOwnerAcceptanceRate(owner: Option[StackOverflowUser]): String = {
