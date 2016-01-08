@@ -17,7 +17,7 @@ import scala.collection.mutable
 /**
   * Created by luiscleto on 08/12/2015.
   */
-class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[String], localTags: LocalTagBank) {
+class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[String], localTags: LocalTagBank, exclusiveTags: Boolean) {
 
   ///stores aggregated data for a discussion's answers
   class AnswersProperties(val max_score: Int, val avg_score: Double, val min_score: Int, val max_length: Int,
@@ -157,6 +157,9 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
   def processDiscussion(artifact: StackOverflowArtifact): Unit = {
 
     if(!tagFilters.forall(artifact.question.tags.contains))
+      return
+
+    if(exclusiveTags && !artifact.question.tags.forall(tagFilters.contains))
       return
 
     val daysSincePosted = dataDumpDate.toEpochDay - artifact.question.creationDate.toInstant.atZone(ZoneId.systemDefault()).toLocalDate.toEpochDay
