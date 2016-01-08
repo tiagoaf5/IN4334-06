@@ -17,10 +17,11 @@ object Main {
     //val stormedDataSetDir = "src/main/resources/input"
 
     val localTags = new LocalTagBank(stormedDataSetDir)
-    val exclusiveTags = false
 
-    val tagFilters = List("java", "android")
-    val analyser = new DiscussionAnalyser("src/main/resources/results/", Calendar.getInstance().getTimeInMillis + "_filtered-by_" + tagFilters.mkString("_") + ".csv", tagFilters, localTags, exclusiveTags)
+    val tagFilters = List("java")
+    val exclusiveFilters = false
+
+    val analyser = new DiscussionAnalyser("src/main/resources/results/", Calendar.getInstance().getTimeInMillis + "_filtered-by_" + tagFilters.mkString("_") + ".csv", tagFilters, localTags, exclusiveFilters)
 
     Files.walk(Paths.get(stormedDataSetDir))
       .filter({(f:Path) => f.toString.endsWith(".json")})
