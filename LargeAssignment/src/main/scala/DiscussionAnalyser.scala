@@ -77,6 +77,9 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     "local max tag popularity (no java)," +
     "local avg tag popularity," +
     "local min tag popularity," +
+    "max API popularity," +
+    "avg API popularity," +
+    "min API popularity," +
     "total code %," +
     "java %," +
     "json %," +
@@ -200,6 +203,24 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
     }
     lavgTagPop /= artifact.question.tags.length
 
+    var gmaxTagPop: Long = 0
+    var gminTagPop: Long = Long.MaxValue
+    var gavgTagPop: Double = 0.0
+    var numAPIs: Int = 0
+
+    for (tag <- artifact.question.tags) {
+      if (GitHubPopularity.getTagPopularity(tag) != 0) {
+        gmaxTagPop = Math.max(gmaxTagPop, GitHubPopularity.getTagPopularity(tag))
+        gminTagPop = Math.min(gminTagPop, GitHubPopularity.getTagPopularity(tag))
+        gavgTagPop += GitHubPopularity.getTagPopularity(tag)
+        numAPIs += 1
+      }
+    }
+    if (numAPIs > 0)
+      gavgTagPop /= numAPIs
+    else
+      gminTagPop = 0
+
     if (artifact.answers.nonEmpty)
       answersProperties = processAnswers(artifact, artifact.question.viewCount, artifact.question.tags.length, maxTagPop, avgTagPop, minTagPop, lmaxTagPop, lavgTagPop, lminTagPop)
 
@@ -217,6 +238,9 @@ class DiscussionAnalyser(filedir: String, filename: String, tagFilters: Seq[Stri
       lmaxTagPop,
       lavgTagPop,
       lminTagPop,
+      gmaxTagPop,
+      gavgTagPop,
+      gminTagPop,
       iuProperties.code_p,
       iuProperties.java_p,
       iuProperties.json_p,
