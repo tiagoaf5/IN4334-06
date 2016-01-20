@@ -201,4 +201,18 @@ ggplot(melted.metrics)+
   theme(legend.key = element_blank()) +
   theme(legend.position = "top")
 
-#write.table(temps, file="/Users/tiago/Documents/lab/IN4334-06/R/results/Results_rq1/results.csv",sep=";", dec=",")
+
+
+
+#ate 1000
+#ate 10 000
+#ate 100 000
+#ate 1000 0000
+
+myData = c()
+myData$a = data[data$view.count <= 1000,]$score
+myData$b = data[data$view.count > 1000 & data$view.count <= 10000,]$score
+myData$c = data[data$view.count > 10000 & data$view.count <= 100000,]$score
+myData$d = data[data$view.count > 100000 & data$view.count <= 1000000,]$score
+
+boxplot(myData, ylab="score", names = c('\u2264 1k', '1k-10k', '10k-100k', '>100k'))
